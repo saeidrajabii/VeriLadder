@@ -83,6 +83,7 @@
     @media (max-width: 768px) { .has-text-justified, .ex-intro, .vl-caption { text-align: left !important; } }
     .vl-soon { opacity: 0.55; pointer-events: none; }
     .vl-table.levels td:nth-child(2), .vl-table.levels td:nth-child(3), .vl-table.levels th:nth-child(2), .vl-table.levels th:nth-child(3) { text-align: left; }
+      .vl-zoom img { cursor: zoom-in; }
   </style>
 </head>
 <body>
@@ -161,7 +162,7 @@
 <section class="hero teaser">
   <div class="container is-max-desktop">
     <div class="hero-body">
-      <a href="./assets/framework_v2.webp"><img src="./assets/framework_v2.webp" width="100%"
+      <a class="vl-zoom" href="./assets/full/framework_v2_full.png" target="_blank" rel="noopener" title="Open full size"><img src="./assets/framework_v2.webp" width="100%"
            alt="Overview of VeriLadder. Level 1 synthesizes each design. Level 2 grades the instruction on four qualities using facts from Yosys. Level 3 rewrites it as a refined specification, accepted only if code written from it alone is verified equivalent to the original. Levels 4 and 5 add paraphrases and one-fact variants, verified with the same check."></a>
       <h2 class="subtitle has-text-centered figure-caption">
         Most instructions in public Verilog datasets do not determine their circuit.
@@ -248,7 +249,7 @@
             </tbody>
           </table>
         </div>
-        <a href="./assets/dataset_view.webp"><img src="./assets/dataset_view.webp" class="vl-fig-mid" style="margin-top: 1.5rem;"
+        <a class="vl-zoom" href="./assets/full/dataset_view_full.png" target="_blank" rel="noopener" title="Open full size"><img src="./assets/dataset_view.webp" class="vl-fig-mid" style="margin-top: 1.5rem;"
              alt="What a record of VeriLadder contains, level by level."></a>
         <p class="vl-caption">
           What a record of VeriLadder contains. Each frame lists what one level adds. At Level&nbsp;3 the record keeps
@@ -544,7 +545,7 @@ end else ...</pre>
             builder that the pipeline uses.
           </p>
         </div>
-        <a href="./assets/roundtrip_combined.webp"><img src="./assets/roundtrip_combined.webp" width="100%"
+        <a class="vl-zoom" href="./assets/full/roundtrip_combined_full.png" target="_blank" rel="noopener" title="Open full size"><img src="./assets/roundtrip_combined.webp" width="100%"
              alt="(a) Outcome of the round trip for 14,292 designs. (b) Share of designs rebuilt by two builders from each kind of specification."></a>
         <p class="vl-caption">
           (a) Outcome of the 14,292 designs that reach the round trip; the 11,247 accepted designs give the refinement
@@ -558,7 +559,7 @@ end else ...</pre>
     <div class="columns is-centered vl-block">
       <div class="column is-full-width">
         <h2 class="title is-3 has-text-centered">Synthesis Labels for Two Corpora</h2>
-        <a href="./assets/P1_level1_outcome.webp"><img src="./assets/P1_level1_outcome.webp" class="vl-fig-mid"
+        <a class="vl-zoom" href="./assets/full/P1_level1_outcome_full.png" target="_blank" rel="noopener" title="Open full size"><img src="./assets/P1_level1_outcome.webp" class="vl-fig-mid"
              alt="Level 1 outcome for RTLCoder and PyraNet as a share of all designs."></a>
         <p class="vl-caption has-text-centered">
           Level&nbsp;1 outcome for each dataset, as a share of all designs (numbers of designs in parentheses). An empty
