@@ -39,9 +39,7 @@
     .vl-table.main tr.group td { text-align: left; background: #fafafa; font-size: 0.8rem; padding-top: 0.35rem; font-style: italic; }
     .vl-table.main tr.ours td { background: #eef4fb; }
     .vl-table.main td.best { font-weight: 700; }
-    .vl-table.kto td, .vl-table.kto th { text-align: right; white-space: nowrap; }
-    .vl-table.kto td:first-child, .vl-table.kto th:first-child { text-align: left; }
-    .lvl { display: inline-block; color: #fff; font-weight: 600; font-size: 0.8rem; padding: 0.05rem 0.45rem; border-radius: 4px; white-space: nowrap; }
+        .lvl { display: inline-block; color: #fff; font-weight: 600; font-size: 0.8rem; padding: 0.05rem 0.45rem; border-radius: 4px; white-space: nowrap; }
     .lvl.l1 { background: #1B8A5A; } .lvl.l2 { background: #D9620F; } .lvl.l3 { background: #2A6FC9; }
     .lvl.l4 { background: #6A44B0; } .lvl.l5 { background: #B8326E; } .lvl.lb { background: #4a4a4a; }
 
@@ -267,7 +265,8 @@
         <p class="ex-intro">
           Two RTLCoder designs taken from the dataset. A small combinational circuit, <code>digital_system</code>,
           goes through Levels&nbsp;1 to&nbsp;3, and a saturating adder, <code>adder</code>, through Levels&nbsp;3
-          to&nbsp;5. Texts are shown as stored; only the highlighting is added.
+          to&nbsp;5. Specifications, paraphrases and counterexamples are shown as stored, with only highlighting
+          added. Long instructions and code are shortened, and the Level&nbsp;2 gaps are restated in plain words.
         </p>
 
         <div class="ex-tabs" role="tablist">
@@ -379,11 +378,11 @@ endmodule</pre>
           <div class="box-ex good">
             <div class="bx-title">Refined specification (accepted in the first round)</div>
             <div class="bx-body">
-              <p><b>Overview.</b> digital_system produces a logic-1 when <span class="mark-fix">the sum of its four input bits
+              <p><b>Overview:</b> digital_system produces a logic-1 when <span class="mark-fix">the sum of its four input bits
                 is divisible by 3</span>, and a logic-0 otherwise.</p>
-              <p style="margin-top:0.4rem"><b>Interface.</b> <span class="mark-fix">Module digital_system. Inputs a, b, c, d,
-                each 1-bit unsigned. Output out, 1-bit unsigned.</span></p>
-              <p style="margin-top:0.4rem"><b>Behavior.</b> <span class="mark-fix">For every combination of a, b, c, and d, out
+              <p style="margin-top:0.4rem"><b>Interface:</b> <span class="mark-fix">Module digital_system. Inputs: a, b, c, d,
+                each 1-bit unsigned. Output: out, 1-bit unsigned.</span></p>
+              <p style="margin-top:0.4rem"><b>Behavior:</b> <span class="mark-fix">For every combination of a, b, c, and d, out
                 is 1 exactly when the sum of their individual bit values is divisible by 3; otherwise out is 0.</span> The
                 result is combinational with no cycle latency.</p>
             </div>
@@ -424,7 +423,7 @@ endmodule</pre>
           <div class="ex-grid c3" style="margin-top:0.8rem">
             <div class="box-ex bad">
               <div class="bx-title">First refined specification (fails)</div>
-              <div class="bx-body">[...] Behavior. <span class="mark-bad">Compute A + B as an 8-bit unsigned value, wrapping
+              <div class="bx-body">[...] Behavior: <span class="mark-bad">Compute A + B as an 8-bit unsigned value, wrapping
                 modulo 256.</span> If this wrapped value is greater than 255, Y is 255; otherwise Y is the wrapped value.
                 Thus, for every input pair, Y is the low 8 bits of A + B.</div>
               <div class="bx-note">Rebuilt, <b>0 of 5</b> verified equivalent.</div>
@@ -442,7 +441,7 @@ endmodule</pre>
             </div>
             <div class="box-ex good">
               <div class="bx-title">Revised specification (accepted)</div>
-              <div class="bx-body">[...] Behavior. <span class="mark-fix">Compare the full unsigned mathematical sum A + B
+              <div class="bx-body">[...] Behavior: <span class="mark-fix">Compare the full unsigned mathematical sum A + B
                 against 255.</span> If the sum is greater than 255, Y is 255; otherwise, Y is the low 8 bits of the sum.</div>
               <div class="bx-note">Rebuilt, <b>5 of 5</b> verified equivalent. The trajectory stores both specifications and
                 the counterexample.</div>
@@ -456,7 +455,7 @@ endmodule</pre>
             Each is rebuilt into a circuit verified equivalent to the code.</p>
           <div class="box-ex good" style="margin-bottom:0.8rem">
             <div class="bx-title">Accepted specification</div>
-            <div class="bx-body">[...] Behavior. Compare the full unsigned mathematical sum A + B against 255. If the sum is
+            <div class="bx-body">[...] Behavior: Compare the full unsigned mathematical sum A + B against 255. If the sum is
               greater than 255, Y is 255; otherwise, Y is the low 8 bits of the sum.</div>
           </div>
           <div class="ex-grid c3">
@@ -496,7 +495,7 @@ endmodule</pre>
           <div class="ex-grid c3">
             <div class="box-ex bad">
               <div class="bx-title">Changed specification</div>
-              <div class="bx-body">[...] Behavior. Compare the full unsigned mathematical sum A + B against 255. If the sum is
+              <div class="bx-body">[...] Behavior: Compare the full unsigned mathematical sum A + B against 255. If the sum is
                 greater than 255, Y is <span class="mark-bad">254</span>; otherwise, Y is the low 8 bits of the sum.</div>
               <div class="bx-note">Rebuilt, <b>5 of 5</b> verified equivalent to the changed code, <b>0 of 5</b> to the
                 original code.</div>
@@ -611,36 +610,6 @@ end else ...</pre>
           VeriLadder-Qwen-7B and VeriLadder-QwenCoder-7B are Qwen2.5-7B-Instruct and Qwen2.5-Coder-7B-Instruct fine-tuned
           on VeriLadder.
         </p>
-      </div>
-    </div>
-
-    <!-- KTO. -->
-    <div class="columns is-centered has-text-centered vl-block">
-      <div class="column is-full-width">
-        <h2 class="title is-4">Level 1 Labels Teach Synthesizable Code</h2>
-        <div class="content has-text-justified">
-          <p>
-            Training with Kahneman&ndash;Tversky optimization (KTO), which needs only a desirable or undesirable label per
-            example, on the Level&nbsp;1 labels raises the share of synthesizable code for each of eight open-source
-            LLMs, by 10.9 to 55.6 percentage points on 7,900 test prompts.
-          </p>
-        </div>
-        <div class="table-container">
-          <table class="table is-narrow vl-table kto">
-            <thead><tr><th>Model</th><th>Pre-trained</th><th>KTO</th><th>Gain</th></tr></thead>
-            <tbody>
-              <tr><td>Qwen2.5-Coder-7B-Instruct</td><td>77.5</td><td>89.0</td><td>+11.5</td></tr>
-              <tr><td>Qwen3-32B</td><td>70.4</td><td>84.3</td><td>+13.9</td></tr>
-              <tr><td>Qwen2.5-7B-Instruct</td><td>60.1</td><td>80.8</td><td>+20.7</td></tr>
-              <tr><td>Qwen2.5-Coder-1.5B-Instruct</td><td>40.6</td><td>80.6</td><td>+40.0</td></tr>
-              <tr><td>Qwen2.5-14B-Instruct</td><td>69.7</td><td>80.6</td><td>+10.9</td></tr>
-              <tr><td>Gemma-3-4B-it</td><td>52.2</td><td>78.7</td><td>+26.5</td></tr>
-              <tr><td>Llama-3.1-8B-Instruct</td><td>16.9</td><td>72.5</td><td>+55.6</td></tr>
-              <tr><td>Llama-3.2-1B-Instruct</td><td>7.8</td><td>45.4</td><td>+37.6</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="vl-caption has-text-centered">Share of synthesizable code (%) on the 7,900 test prompts, before and after KTO.</p>
       </div>
     </div>
 
