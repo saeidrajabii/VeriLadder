@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="VeriLadder: a five-level Verilog dataset built by a multi-agent framework in which LLM agents write specifications and EDA tools (a synthesizer and a formal equivalence checker) decide what is accepted.">
+  <meta name="keywords" content="VeriLadder, Verilog, RTL generation, LLM, dataset, specification refinement, formal equivalence checking, Yosys">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VeriLadder: Tool-Verified Verilog Datasets</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+
+  <style>
+    .publication-title .title-sub { display: inline-block; font-weight: 400; font-size: 2rem; line-height: 1.3; }
+    @media (max-width: 768px) { .publication-title .title-sub { font-size: 1.4rem; } }
+    .figure-caption { margin-top: 1rem; }
+    .ud-logo { height: 56px; width: auto; }
+    .vl-block { margin-top: 3rem; }
+    .vl-caption { margin-top: 0.75rem; font-size: 0.95rem; text-align: justify; }
+    .vl-caption.has-text-centered { text-align: center; }
+    .vl-fig-mid { width: 90%; display: block; margin: 0.5rem auto 0; }
+    @media (max-width: 768px) { .vl-fig-mid { width: 100%; } }
+    .vl-table { margin: 0 auto; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+    .vl-table th, .vl-table td { vertical-align: middle; }
+    .vl-table.levels td:nth-child(4), .vl-table.levels th:nth-child(4) { text-align: right; white-space: nowrap; }
+    .vl-table.main th, .vl-table.main td { text-align: center; white-space: nowrap; }
+    .vl-table.main td.mdl { text-align: left; }
+    .vl-table.main th.grp { border-bottom: 1px solid #dbdbdb; }
+    .vl-table.main tr.group td { text-align: left; background: #fafafa; font-size: 0.8rem; padding-top: 0.35rem; font-style: italic; }
+    .vl-table.main tr.ours td { background: #eef4fb; }
+    .vl-table.main td.best { font-weight: 700; }
+    .vl-table.kto td, .vl-table.kto th { text-align: right; white-space: nowrap; }
+    .vl-table.kto td:first-child, .vl-table.kto th:first-child { text-align: left; }
+    .lvl { display: inline-block; color: #fff; font-weight: 600; font-size: 0.8rem; padding: 0.05rem 0.45rem; border-radius: 4px; white-space: nowrap; }
+    .lvl.l1 { background: #1B8A5A; } .lvl.l2 { background: #D9620F; } .lvl.l3 { background: #2A6FC9; }
+    .lvl.l4 { background: #6A44B0; } .lvl.l5 { background: #B8326E; } .lvl.lb { background: #4a4a4a; }
+
+    /* Example records */
+    .ex-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; margin-bottom: 1.2rem; }
+    .ex-tab { border: 1px solid #dbdbdb; background: #fff; border-radius: 999px; padding: 0.3rem 0.9rem; cursor: pointer;
+              font-size: 0.9rem; font-family: inherit; color: #363636; }
+    .ex-tab[aria-selected="true"] { background: #363636; color: #fff; border-color: #363636; }
+    .ex-panel { display: none; }
+    .ex-panel.active { display: block; }
+    .ex-intro { font-size: 0.95rem; margin-bottom: 0.8rem; text-align: justify; }
+    .ex-grid { display: grid; gap: 0.8rem; }
+    .ex-grid.c2 { grid-template-columns: 1.15fr 1fr; }
+    .ex-grid.c3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 768px) { .ex-grid.c2, .ex-grid.c3 { grid-template-columns: 1fr; } }
+    .box-ex { border: 1.5px solid #b5b5b5; border-radius: 6px; background: #fafafa; font-size: 0.85rem; display: flex; flex-direction: column; min-width: 0; }
+    .box-ex .bx-title { font-weight: 600; padding: 0.35rem 0.7rem; border-bottom: 1px solid rgba(0,0,0,0.08); }
+    .box-ex .bx-body { padding: 0.55rem 0.7rem; flex: 1; text-align: left; }
+    .box-ex .bx-note { padding: 0.45rem 0.7rem; border-top: 1px dashed rgba(0,0,0,0.18); font-size: 0.82rem; text-align: left; }
+    .box-ex.good { border-color: #3c8d4f; background: #f3faf4; } .box-ex.good .bx-title { color: #2b6e3b; }
+    .box-ex.bad { border-color: #c0392b; background: #fdf4f3; } .box-ex.bad .bx-title { color: #a52a1f; }
+    .box-ex.warn { border-color: #d9822b; background: #fdf8f1; } .box-ex.warn .bx-title { color: #a85d14; }
+    .box-ex.para { border-color: #6a44b0; background: #f7f4fc; } .box-ex.para .bx-title { color: #553896; }
+    .box-ex pre { background: transparent; padding: 0; margin: 0; font-size: 0.78rem; line-height: 1.35; white-space: pre; overflow-x: auto; color: #363636; }
+    .mark-bad { background: #f9d3cf; padding: 0 0.15rem; border-radius: 2px; }
+    .mark-fix { background: #cfeed5; padding: 0 0.15rem; border-radius: 2px; }
+    .grades { width: 100%; border-collapse: collapse; }
+    .grades td { padding: 0.3rem 0.4rem; vertical-align: top; border-bottom: 1px solid #eee; }
+    .grades td:nth-child(2) { text-align: center; font-weight: 700; width: 2.5rem; }
+    .grades td:first-child { white-space: nowrap; width: 7rem; }
+    .cex { margin: 0 auto; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    .cex th, .cex td { padding: 0.1rem 0.6rem; text-align: center; }
+    .cex th { font-weight: 600; font-size: 0.78rem; }
+    .cex .diff { color: #b0281d; font-weight: 700; }
+    .rule { border-collapse: collapse; margin-top: 0.4rem; }
+    .rule th, .rule td { border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 0.15rem 0.5rem; text-align: left; }
+    .ex-nav { display: flex; justify-content: space-between; margin-top: 1rem; }
+    .ex-nav button { border: none; background: none; color: #3273dc; cursor: pointer; font-size: 0.9rem; font-family: inherit; padding: 0.2rem; }
+    .ex-nav button[disabled] { color: #bbb; cursor: default; }
+    pre.usage { font-size: 0.82rem; }
+    @media (max-width: 768px) { .has-text-justified, .ex-intro, .vl-caption { text-align: left !important; } }
+    .vl-soon { opacity: 0.55; pointer-events: none; }
+    .vl-table.levels td:nth-child(2), .vl-table.levels td:nth-child(3), .vl-table.levels th:nth-child(2), .vl-table.levels th:nth-child(3) { text-align: left; }
+  </style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">VeriLadder<br>
+            <span class="title-sub">A Multi-Agent Specification Refinement System for Tool-Verified Verilog Datasets</span></h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://saeidrajabii.github.io">Saeid Rajabi</a>,</span>
+            <span class="author-block">
+              <a href="https://www.ece.udel.edu/people/faculty/chengmo/">Chengmo Yang</a>,</span>
+            <span class="author-block">
+              and <a href="https://www.ece.udel.edu/people/faculty/satwik-patnaik/">Satwik Patnaik</a></span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">Department of Electrical &amp; Computer Engineering</span><br>
+            <span class="author-block">University of Delaware</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- Paper Link. -->
+              <span class="link-block">
+                <a href="https://arxiv.org/pdf/2611.28617"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <!-- arXiv Link. -->
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2611.28617"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="ai ai-arxiv"></i></span>
+                  <span>arXiv</span>
+                </a>
+              </span>
+              <!-- Dataset Link. -->
+              <span class="link-block">
+                <a href="https://huggingface.co/datasets/saeidrajabi/VeriLadder"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-database"></i></span>
+                  <span>Dataset</span>
+                </a>
+              </span>
+              <!-- Models Link. -->
+              <span class="link-block">
+                <a href="https://huggingface.co/collections/saeidrajabi/veriladder"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-cube"></i></span>
+                  <span>Models</span>
+                </a>
+              </span>
+              <!-- Code Link (prompts and pipeline are released upon acceptance). -->
+              <span class="link-block">
+                <a class="external-link button is-normal is-rounded is-dark vl-soon" aria-disabled="true"
+                   title="The prompts and the pipeline will be released upon acceptance.">
+                  <span class="icon"><i class="fab fa-github"></i></span>
+                  <span>Code (upon acceptance)</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <a href="./assets/framework_v2.webp"><img src="./assets/framework_v2.webp" width="100%"
+           alt="Overview of VeriLadder. Level 1 synthesizes each design. Level 2 grades the instruction on four qualities using facts from Yosys. Level 3 rewrites it as a refined specification, accepted only if code written from it alone is verified equivalent to the original. Levels 4 and 5 add paraphrases and one-fact variants, verified with the same check."></a>
+      <h2 class="subtitle has-text-centered figure-caption">
+        Most instructions in public Verilog datasets do not determine their circuit.
+        <b>VeriLadder</b> labels, grades and rewrites them, and keeps a specification only when an EDA tool
+        proves that the circuit written from it is the original one.
+      </h2>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Training data is a bottleneck in AI, especially for large language models (LLMs) that write Verilog,
+            because register-transfer-level (RTL) code is rarely published and existing datasets mostly check code
+            for syntax, not instruction correctness. This paper presents VeriLadder, a five-level Verilog dataset, and
+            the multi-agent framework that builds it, in which LLM agents write and revise specifications, and EDA
+            tools (a synthesizer and a formal equivalence checker) decide what is accepted. Its levels follow an
+            engineer's checks.
+          </p>
+          <p>
+            Level&nbsp;1 labels designs from two large Verilog corpora, namely RTLCoder and PyraNet, with synthesis
+            results, failure causes, critical warnings and post-synthesis metrics. 28% of RTLCoder designs fail
+            synthesis and are kept as negatives. Level&nbsp;2 grades each instruction on four specification
+            qualities, and low grades predict failed rebuilds. Level&nbsp;3 rewrites each instruction into a refined
+            specification and accepts it only if an LLM from another model family, reading only that specification,
+            writes a circuit formally equivalent to the original. This raises the share of rebuildable designs from
+            26.1% to 78.2%, keeping every failed specification with its counterexample. Levels&nbsp;4 and&nbsp;5 add
+            verified paraphrases and one-fact variants, hard negatives that differ only in one behavior from the
+            verified design. VeriLadder labels the synthesizability of 716,627 designs and, from RTLCoder, provides
+            11,247 refined specifications, 32,393 paraphrases and 8,397 one-fact variants. Fine-tuning
+            Qwen2.5-Coder-7B-Instruct on VeriLadder raises functional pass@1 from 31.7% to 50.0% on
+            VerilogEval&nbsp;v2 and from 35.0% to 45.2% on RTLLM&nbsp;v2. The dataset and fine-tuned models are
+            publicly available.
+          </p>
+        </div>
+      </div>
+    </div>
+    <!--/ Abstract. -->
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+
+    <!-- The five levels. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">The Five Levels</h2>
+        <div class="content has-text-justified">
+          <p>
+            Each level asks the question an engineer would ask next, and holds only the designs that reach it.
+            Level&nbsp;1 covers both corpora, and Levels&nbsp;2 to&nbsp;5 are applied to the 15,656 effectively
+            synthesizable RTLCoder designs, of which 14,385 pass the entry checks.
+          </p>
+        </div>
+        <div class="table-container">
+          <table class="table is-narrow is-fullwidth vl-table levels">
+            <thead><tr><th>Level</th><th>Question</th><th>What a record adds</th><th>Released</th></tr></thead>
+            <tbody>
+              <tr><td><span class="lvl l1">Level 1</span></td><td>Is the code synthesizable?</td>
+                  <td>Synthesis label, failure family and Yosys log, critical warnings, cell count, area and critical-path delay</td>
+                  <td>716,627 designs<br><small>26,076 RTLCoder, 690,551 PyraNet</small></td></tr>
+              <tr><td><span class="lvl l2">Level 2</span></td><td>How good is the instruction?</td>
+                  <td>Grades from 1 to 5 for consistency, unambiguity, completeness and verifiability, with evidence and gaps</td>
+                  <td>14,292 graded instructions</td></tr>
+              <tr><td><span class="lvl l3">Level 3</span></td><td>Does the refined specification determine the circuit?</td>
+                  <td>Refined specification verified by formal equivalence, and the trajectory of every revision with its counterexample</td>
+                  <td>11,247 refined specifications<br><small>trajectories of 14,385 designs</small></td></tr>
+              <tr><td><span class="lvl l4">Level 4</span></td><td>Does a rewording keep the circuit?</td>
+                  <td>Lexical, syntactic and representational paraphrases, each rebuilt and verified equivalent</td>
+                  <td>32,393 paraphrases</td></tr>
+              <tr><td><span class="lvl l5">Level 5</span></td><td>Is a change of one requirement noticed?</td>
+                  <td>Specification and code with exactly one fact changed, and the counterexample against the original</td>
+                  <td>8,397 one-fact variants</td></tr>
+              <tr><td><span class="lvl lb">Bench</span></td><td>Can a model write the circuit?</td>
+                  <td>VeriLadder-Bench, 300 held-out refined specifications checked by formal equivalence</td>
+                  <td>300 problems</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <a href="./assets/dataset_view.webp"><img src="./assets/dataset_view.webp" class="vl-fig-mid" style="margin-top: 1.5rem;"
+             alt="What a record of VeriLadder contains, level by level."></a>
+        <p class="vl-caption">
+          What a record of VeriLadder contains. Each frame lists what one level adds. At Level&nbsp;3 the record keeps
+          the refinement trajectory, and at Level&nbsp;5 the counterexample of every one-fact variant.
+        </p>
+      </div>
+    </div>
+    <!--/ The five levels. -->
+
+    <!-- Examples. -->
+    <div class="columns is-centered vl-block">
+      <div class="column is-full-width">
+        <h2 class="title is-3 has-text-centered">Real Records, Level by Level</h2>
+        <p class="ex-intro">
+          Two RTLCoder designs taken from the dataset. A small combinational circuit, <code>digital_system</code>,
+          goes through Levels&nbsp;1 to&nbsp;3, and a saturating adder, <code>adder</code>, through Levels&nbsp;3
+          to&nbsp;5. Texts are shown as stored; only the highlighting is added.
+        </p>
+
+        <div class="ex-tabs" role="tablist">
+          <button class="ex-tab" role="tab" aria-selected="true" data-tab="0">Level 1</button>
+          <button class="ex-tab" role="tab" aria-selected="false" data-tab="1">Level 2</button>
+          <button class="ex-tab" role="tab" aria-selected="false" data-tab="2">Level 3</button>
+          <button class="ex-tab" role="tab" aria-selected="false" data-tab="3">Level 3, revised</button>
+          <button class="ex-tab" role="tab" aria-selected="false" data-tab="4">Level 4</button>
+          <button class="ex-tab" role="tab" aria-selected="false" data-tab="5">Level 5</button>
+        </div>
+
+        <!-- Level 1 -->
+        <div class="ex-panel active" role="tabpanel">
+          <p class="ex-intro">One record for each outcome of the synthesis label.</p>
+          <div class="ex-grid c3">
+            <div class="box-ex good">
+              <div class="bx-title"><code>digital_system</code>, synthesizable</div>
+              <div class="bx-body">
+<pre>always @* begin
+  if ((a+b+c+d)%3 == 0)
+    out &lt;= 1;
+  else out &lt;= 0;
+end</pre>
+                <p style="margin-top:0.5rem">Synthesizable, yes<br>Critical warnings, none<br>
+                Cells 5, area 5.9&nbsp;µm²<br>Flip-flops 0, logic depth 3<br>Critical-path delay 0.11&nbsp;ns</p>
+              </div>
+              <div class="bx-note">A small combinational circuit, a positive training example.</div>
+            </div>
+            <div class="box-ex bad">
+              <div class="bx-title">Design 16711, not synthesizable</div>
+              <div class="bx-body">
+<pre>always @ (posedge datain
+          or negedge datain)
+  buffer &lt;= datain;</pre>
+                <p style="margin-top:0.5rem">Synthesizable, no<br>
+                Yosys says &ldquo;ERROR: Multiple edge sensitive events found for this signal!&rdquo;<br>
+                Family, clocking and sequential inference</p>
+              </div>
+              <div class="bx-note">Valid Verilog that simulates, but no flip-flop reacts to both edges of a signal.</div>
+            </div>
+            <div class="box-ex warn">
+              <div class="bx-title">Design 1428, critical warning</div>
+              <div class="bx-body">
+<pre>or  or0  (pgood_out, A2, A1);
+or  or1  (pgood_out, B2, B1);
+not not0 (pgood_out, pgood_out);</pre>
+                <p style="margin-top:0.5rem">Synthesizable, yes<br>
+                Critical warning, conflicting drivers (&ldquo;Warning: multiple conflicting drivers for power_good...&rdquo;)</p>
+              </div>
+              <div class="bx-note">Three gates drive the wire <code>pgood_out</code>; a pass label alone would hide the defect.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Level 2 -->
+        <div class="ex-panel" role="tabpanel">
+          <p class="ex-intro">The scorer grades the original instruction of <code>digital_system</code> and reports what is
+            missing, shown here in plain words (<span class="mark-bad">red</span>, phrases that leave the behavior open).</p>
+          <div class="ex-grid c2">
+            <div class="box-ex">
+              <div class="bx-title">Original instruction</div>
+              <div class="bx-body">[...] Create a module that implements a digital system with four inputs (a,b,c,d) that
+                generates a logic-1 when <span class="mark-bad">the input is a multiple of 3</span>, and a logic-0 otherwise.
+                You should design the module using a combinational circuit and <span class="mark-bad">optimize the output
+                expression to minimize the number of gates</span>.</div>
+            </div>
+            <div class="box-ex">
+              <div class="bx-title">Original code</div>
+              <div class="bx-body">
+<pre>module digital_system (
+  input a, input b, input c, input d,
+  output reg out
+);
+  always @* begin
+    if ((a+b+c+d)%3 == 0) begin
+      out &lt;= 1;
+    end else begin
+      out &lt;= 0;
+    end
+  end
+endmodule</pre>
+              </div>
+            </div>
+          </div>
+          <div class="box-ex warn" style="margin-top:0.8rem">
+            <div class="bx-title">Scorer output</div>
+            <div class="bx-body">
+              <table class="grades">
+                <tr><td>Consistency</td><td>5</td><td>No gap. What the instruction states is true of the code.</td></tr>
+                <tr><td>Unambiguity</td><td>3</td><td>&ldquo;The input is a multiple of 3&rdquo; does not say whether a, b, c, d
+                  form one 4-bit number or are four bits to be added. The two readings disagree, for example on <code>1100</code>
+                  (as a number, 12 is a multiple of 3; as a sum, 1+1+0+0 = 2 is not) and on <code>1110</code> (as a number,
+                  14 is not; as a sum, 1+1+1+0 = 3 is).</td></tr>
+                <tr><td>Completeness</td><td>2</td><td>The module name, the output name and the port directions are missing.</td></tr>
+                <tr><td>Verifiability</td><td>3</td><td>&ldquo;Minimize the number of gates&rdquo; gives no gate count or limit, so no test can check it.</td></tr>
+              </table>
+            </div>
+            <div class="bx-note">Rebuilt from the original instruction, <b>0 of 5</b> attempts verified equivalent (all five
+              use other port names). With the exact port list added, still <b>0 of 5</b>. All five read a, b, c, d as one
+              4-bit number, so for a=1, b=1, c=0, d=0 they output 1 and the code outputs 0.</div>
+          </div>
+        </div>
+
+        <!-- Level 3, first round -->
+        <div class="ex-panel" role="tabpanel">
+          <p class="ex-intro">The refined specification of <code>digital_system</code> closes the gaps that Level&nbsp;2
+            reported (<span class="mark-fix">green</span>) and is accepted because every rebuild from it is proven
+            equivalent to the code.</p>
+          <div class="box-ex good">
+            <div class="bx-title">Refined specification (accepted in the first round)</div>
+            <div class="bx-body">
+              <p><b>Overview.</b> digital_system produces a logic-1 when <span class="mark-fix">the sum of its four input bits
+                is divisible by 3</span>, and a logic-0 otherwise.</p>
+              <p style="margin-top:0.4rem"><b>Interface.</b> <span class="mark-fix">Module digital_system. Inputs a, b, c, d,
+                each 1-bit unsigned. Output out, 1-bit unsigned.</span></p>
+              <p style="margin-top:0.4rem"><b>Behavior.</b> <span class="mark-fix">For every combination of a, b, c, and d, out
+                is 1 exactly when the sum of their individual bit values is divisible by 3; otherwise out is 0.</span> The
+                result is combinational with no cycle latency.</p>
+            </div>
+            <div class="bx-note">Rebuilt, <b>5 of 5</b> attempts verified equivalent (a proof over all 16 inputs). The
+              gate-count request, which no test can check, is not part of the refined specification.</div>
+          </div>
+        </div>
+
+        <!-- Level 3, revised -->
+        <div class="ex-panel" role="tabpanel">
+          <p class="ex-intro">A refinement trajectory. The first refined specification of a saturating adder wrongly states
+            that the sum wraps at 8 bits. The counterexample shows that the code saturates instead, and the revised
+            specification, which compares the full sum, is accepted.</p>
+          <div class="ex-grid c2">
+            <div class="box-ex">
+              <div class="bx-title">Original instruction (shortened)</div>
+              <div class="bx-body">You are tasked with designing a Verilog module that will take in two 8-bit inputs, A and B,
+                and output a single 8-bit output, Y. The output Y is the result of adding A and B, but with a twist: if the
+                sum of A and B is greater than 255, then the output Y should be set to 255. Your module should be named
+                &ldquo;adder&rdquo; [...]</div>
+            </div>
+            <div class="box-ex">
+              <div class="bx-title">Original code</div>
+              <div class="bx-body">
+<pre>module adder(input [7:0] A, input [7:0] B,
+             output reg [7:0] Y);
+always @(*) begin
+  if (A + B &gt; 255) begin
+    Y &lt;= 255;
+  end else begin
+    Y &lt;= A + B;
+  end
+end
+endmodule</pre>
+              </div>
+            </div>
+          </div>
+          <div class="ex-grid c3" style="margin-top:0.8rem">
+            <div class="box-ex bad">
+              <div class="bx-title">First refined specification (fails)</div>
+              <div class="bx-body">[...] Behavior. <span class="mark-bad">Compute A + B as an 8-bit unsigned value, wrapping
+                modulo 256.</span> If this wrapped value is greater than 255, Y is 255; otherwise Y is the wrapped value.
+                Thus, for every input pair, Y is the low 8 bits of A + B.</div>
+              <div class="bx-note">Rebuilt, <b>0 of 5</b> verified equivalent.</div>
+            </div>
+            <div class="box-ex">
+              <div class="bx-title">Counterexample</div>
+              <div class="bx-body">
+                <table class="cex">
+                  <tr><th>A</th><th>B</th><th>Y, original</th><th>Y, rebuilt</th></tr>
+                  <tr><td>255</td><td>128</td><td>255</td><td class="diff">127</td></tr>
+                </table>
+              </div>
+              <div class="bx-note">In Verilog, <code>A + B &gt; 255</code> is computed with more than 8 bits, so the sum does
+                not wrap and the code saturates.</div>
+            </div>
+            <div class="box-ex good">
+              <div class="bx-title">Revised specification (accepted)</div>
+              <div class="bx-body">[...] Behavior. <span class="mark-fix">Compare the full unsigned mathematical sum A + B
+                against 255.</span> If the sum is greater than 255, Y is 255; otherwise, Y is the low 8 bits of the sum.</div>
+              <div class="bx-note">Rebuilt, <b>5 of 5</b> verified equivalent. The trajectory stores both specifications and
+                the counterexample.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Level 4 -->
+        <div class="ex-panel" role="tabpanel">
+          <p class="ex-intro">Three paraphrases of the accepted specification of the saturating adder, one per kind of change.
+            Each is rebuilt into a circuit verified equivalent to the code.</p>
+          <div class="box-ex good" style="margin-bottom:0.8rem">
+            <div class="bx-title">Accepted specification</div>
+            <div class="bx-body">[...] Behavior. Compare the full unsigned mathematical sum A + B against 255. If the sum is
+              greater than 255, Y is 255; otherwise, Y is the low 8 bits of the sum.</div>
+          </div>
+          <div class="ex-grid c3">
+            <div class="box-ex para">
+              <div class="bx-title">Lexical</div>
+              <div class="bx-body">Evaluate the complete unsigned mathematical total of <code>A</code> and <code>B</code>
+                relative to 255. For a total exceeding 255, the output <code>Y</code> takes the value 255. For a total that
+                does not exceed 255, <code>Y</code> carries the total's least significant 8 bits.</div>
+              <div class="bx-note">Rebuilt, <b>5 of 5</b> verified equivalent.</div>
+            </div>
+            <div class="box-ex para">
+              <div class="bx-title">Syntactic</div>
+              <div class="bx-body">Determine the result by comparing the complete unsigned mathematical total of A and B with
+                0xFF: when that total exceeds 0xFF, the output Y takes the value 0xFF; when it does not exceed 0xFF, Y
+                carries the total's least significant eight bits.</div>
+              <div class="bx-note">Rebuilt, <b>5 of 5</b> verified equivalent.</div>
+            </div>
+            <div class="box-ex para">
+              <div class="bx-title">Representational (table)</div>
+              <div class="bx-body">Evaluate the complete unsigned mathematical total of <code>A</code> and <code>B</code>
+                against 255. The output rule is:
+                <table class="rule">
+                  <tr><th>Total</th><th><code>Y</code></th></tr>
+                  <tr><td>Greater than 255</td><td>255</td></tr>
+                  <tr><td>Not greater than 255</td><td>The total's least significant 8 bits</td></tr>
+                </table>
+              </div>
+              <div class="bx-note">Rebuilt, <b>5 of 5</b> verified equivalent.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Level 5 -->
+        <div class="ex-panel" role="tabpanel">
+          <p class="ex-intro">The saturation value of the adder changes from 255 to 254 in both the specification and the
+            code, and the counterexample shows where the variant and the original differ.</p>
+          <div class="ex-grid c3">
+            <div class="box-ex bad">
+              <div class="bx-title">Changed specification</div>
+              <div class="bx-body">[...] Behavior. Compare the full unsigned mathematical sum A + B against 255. If the sum is
+                greater than 255, Y is <span class="mark-bad">254</span>; otherwise, Y is the low 8 bits of the sum.</div>
+              <div class="bx-note">Rebuilt, <b>5 of 5</b> verified equivalent to the changed code, <b>0 of 5</b> to the
+                original code.</div>
+            </div>
+            <div class="box-ex bad">
+              <div class="bx-title">Changed code (one line)</div>
+              <div class="bx-body">
+<pre>if (A + B &gt; 255) begin
+  Y &lt;= 254;   // was: 255
+end else ...</pre>
+              </div>
+              <div class="bx-note">Synthesizable, and a hard negative for the original specification.</div>
+            </div>
+            <div class="box-ex">
+              <div class="bx-title">Counterexample</div>
+              <div class="bx-body">
+                <table class="cex">
+                  <tr><th>A</th><th>B</th><th>Y, original</th><th>Y, variant</th></tr>
+                  <tr><td>143</td><td>128</td><td>255</td><td class="diff">254</td></tr>
+                </table>
+              </div>
+              <div class="bx-note">The two circuits agree on every input whose sum fits in 8 bits and differ on every input
+                that saturates.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ex-nav">
+          <button id="ex-prev" type="button">&larr; Previous</button>
+          <button id="ex-next" type="button">Next &rarr;</button>
+        </div>
+      </div>
+    </div>
+    <!--/ Examples. -->
+
+    <!-- Round trip. -->
+    <div class="columns is-centered vl-block">
+      <div class="column is-full-width">
+        <h2 class="title is-3 has-text-centered">Most Instructions Do Not Determine Their Circuit</h2>
+        <div class="content has-text-justified">
+          <p>
+            From the original instruction, the builder LLM rebuilds a circuit verified equivalent to the code for only
+            26.1% of the 14,385 designs, and 36.7% when the exact list of ports is added. The refined specifications of
+            VeriLadder raise this to 78.2%, and every accepted specification is confirmed by a formal equivalence check.
+            The gain also holds for an open-source builder, Qwen3-Coder-30B (28% to 71%), so it is not tied to the
+            builder that the pipeline uses.
+          </p>
+        </div>
+        <a href="./assets/roundtrip_combined.webp"><img src="./assets/roundtrip_combined.webp" width="100%"
+             alt="(a) Outcome of the round trip for 14,292 designs. (b) Share of designs rebuilt by two builders from each kind of specification."></a>
+        <p class="vl-caption">
+          (a) Outcome of the 14,292 designs that reach the round trip; the 11,247 accepted designs give the refinement
+          trajectories. (b) Share of designs that each builder rebuilds from each kind of specification, verified
+          equivalent to the original code (1,460 randomly sampled designs; 95% confidence intervals).
+        </p>
+      </div>
+    </div>
+
+    <!-- Level 1 outcome. -->
+    <div class="columns is-centered vl-block">
+      <div class="column is-full-width">
+        <h2 class="title is-3 has-text-centered">Synthesis Labels for Two Corpora</h2>
+        <a href="./assets/P1_level1_outcome.webp"><img src="./assets/P1_level1_outcome.webp" class="vl-fig-mid"
+             alt="Level 1 outcome for RTLCoder and PyraNet as a share of all designs."></a>
+        <p class="vl-caption has-text-centered">
+          Level&nbsp;1 outcome for each dataset, as a share of all designs (numbers of designs in parentheses). An empty
+          circuit is synthesizable but maps to no standard cell.
+        </p>
+      </div>
+    </div>
+
+    <!-- Main results. -->
+    <div class="columns is-centered has-text-centered vl-block">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Training on VeriLadder</h2>
+        <div class="content has-text-justified">
+          <p>
+            Models fine-tuned on the Level&nbsp;3 refined specifications are compared with foundation models, specialized
+            Verilog models, and the same base models trained on the original RTLCoder instructions.
+          </p>
+        </div>
+        <div class="table-container">
+          <table class="table is-narrow vl-table main">
+            <thead>
+              <tr><th></th><th colspan="2" class="grp">VerilogEval v2</th><th colspan="2" class="grp">RTLLM v2</th><th colspan="2" class="grp">VeriLadder-Bench</th></tr>
+              <tr><th>Model</th><th>pass@1</th><th>pass@5</th><th>pass@1</th><th>pass@5</th><th>pass@1</th><th>pass@5</th></tr>
+            </thead>
+            <tbody>
+              <tr class="group"><td colspan="7">Foundation, closed</td></tr>
+              <tr><td class="mdl">GPT-4o</td><td>65.9</td><td>71.2</td><td>57.6</td><td>66.0</td><td>86.5</td><td>92.7</td></tr>
+              <tr><td class="mdl">GPT-5</td><td>71.2</td><td>80.8</td><td>57.6</td><td>66.0</td><td>87.6</td><td>94.7</td></tr>
+              <tr><td class="mdl">GPT-6-sol</td><td>85.5</td><td>89.1</td><td>71.2</td><td>76.0</td><td>92.9</td><td>93.7</td></tr>
+              <tr class="group"><td colspan="7">Foundation, open-source</td></tr>
+              <tr><td class="mdl">Llama-3.1-8B-Instruct</td><td>23.0</td><td>34.9</td><td>16.7</td><td>32.0</td><td>41.5</td><td>69.7</td></tr>
+              <tr><td class="mdl">Qwen2.5-7B-Instruct</td><td>25.5</td><td>38.7</td><td>26.2</td><td>43.6</td><td>55.4</td><td>75.4</td></tr>
+              <tr><td class="mdl">Qwen2.5-Coder-7B-Instruct</td><td>31.7</td><td>47.3</td><td>35.0</td><td>50.0</td><td>61.7</td><td>79.5</td></tr>
+              <tr class="group"><td colspan="7">Specialized, open-source</td></tr>
+              <tr><td class="mdl">CodeV-CL-7B</td><td>25.5</td><td>43.1</td><td>28.5</td><td>45.6</td><td>45.8</td><td>72.7</td></tr>
+              <tr><td class="mdl">RTLCoder-DS-6.7B</td><td>34.6</td><td>47.3</td><td>36.6</td><td>48.4</td><td>61.3</td><td>80.1</td></tr>
+              <tr class="group"><td colspan="7">Trained on RTLCoder (original dataset)</td></tr>
+              <tr><td class="mdl">Qwen2.5-7B-Instruct</td><td>35.1</td><td>44.1</td><td>24.0</td><td>36.0</td><td>61.1</td><td>77.1</td></tr>
+              <tr><td class="mdl">Qwen2.5-Coder-7B-Instruct</td><td>39.4</td><td>46.7</td><td>31.2</td><td>44.0</td><td>67.2</td><td>81.3</td></tr>
+              <tr class="group"><td colspan="7">Ours, trained on VeriLadder</td></tr>
+              <tr class="ours"><td class="mdl"><a href="https://huggingface.co/saeidrajabi/VeriLadder-Qwen-7B">VeriLadder-Qwen-7B</a></td><td>44.5</td><td>59.0</td><td>36.4</td><td>48.0</td><td>79.5</td><td>90.0</td></tr>
+              <tr class="ours"><td class="mdl"><a href="https://huggingface.co/saeidrajabi/VeriLadder-QwenCoder-7B">VeriLadder-QwenCoder-7B</a></td><td class="best">50.0</td><td class="best">61.5</td><td class="best">45.2</td><td class="best">54.0</td><td class="best">83.1</td><td class="best">92.3</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="vl-caption">
+          Functional pass@<i>k</i> (%) with five samples per problem. VeriLadder-Bench is the 300 held-out designs with
+          refined specifications, checked by formal equivalence. Bold marks the best open-source model.
+          VeriLadder-Qwen-7B and VeriLadder-QwenCoder-7B are Qwen2.5-7B-Instruct and Qwen2.5-Coder-7B-Instruct fine-tuned
+          on VeriLadder.
+        </p>
+      </div>
+    </div>
+
+    <!-- KTO. -->
+    <div class="columns is-centered has-text-centered vl-block">
+      <div class="column is-full-width">
+        <h2 class="title is-4">Level 1 Labels Teach Synthesizable Code</h2>
+        <div class="content has-text-justified">
+          <p>
+            Training with Kahneman&ndash;Tversky optimization (KTO), which needs only a desirable or undesirable label per
+            example, on the Level&nbsp;1 labels raises the share of synthesizable code for each of eight open-source
+            LLMs, by 10.9 to 55.6 percentage points on 7,900 test prompts.
+          </p>
+        </div>
+        <div class="table-container">
+          <table class="table is-narrow vl-table kto">
+            <thead><tr><th>Model</th><th>Pre-trained</th><th>KTO</th><th>Gain</th></tr></thead>
+            <tbody>
+              <tr><td>Qwen2.5-Coder-7B-Instruct</td><td>77.5</td><td>89.0</td><td>+11.5</td></tr>
+              <tr><td>Qwen3-32B</td><td>70.4</td><td>84.3</td><td>+13.9</td></tr>
+              <tr><td>Qwen2.5-7B-Instruct</td><td>60.1</td><td>80.8</td><td>+20.7</td></tr>
+              <tr><td>Qwen2.5-Coder-1.5B-Instruct</td><td>40.6</td><td>80.6</td><td>+40.0</td></tr>
+              <tr><td>Qwen2.5-14B-Instruct</td><td>69.7</td><td>80.6</td><td>+10.9</td></tr>
+              <tr><td>Gemma-3-4B-it</td><td>52.2</td><td>78.7</td><td>+26.5</td></tr>
+              <tr><td>Llama-3.1-8B-Instruct</td><td>16.9</td><td>72.5</td><td>+55.6</td></tr>
+              <tr><td>Llama-3.2-1B-Instruct</td><td>7.8</td><td>45.4</td><td>+37.6</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="vl-caption has-text-centered">Share of synthesizable code (%) on the 7,900 test prompts, before and after KTO.</p>
+      </div>
+    </div>
+
+    <!-- Usage. -->
+    <div class="columns is-centered vl-block">
+      <div class="column is-full-width">
+        <h2 class="title is-3 has-text-centered">Using the Dataset</h2>
+        <div class="content has-text-justified">
+          <p>
+            Every level is a Parquet subset on Hugging Face, and the files share the RTLCoder line index <code>id</code>
+            as their key. The dataset is released under CC BY-NC-SA 4.0 and the models under Apache 2.0.
+          </p>
+        </div>
+<pre class="usage"><code>from datasets import load_dataset
+
+l1 = load_dataset("saeidrajabi/VeriLadder", "level1_rtlcoder", split="train").to_pandas()
+l3 = load_dataset("saeidrajabi/VeriLadder", "level3_refined", split="train").to_pandas()
+
+# refined specification next to the original instruction and code
+pairs = l3[l3.accepted].merge(l1[["id", "instruction", "code"]], on="id")
+
+# other subsets: level1_pyranet, level2_grades, level3_trajectories,
+#                level4_paraphrases, level5_variants, veriladder_bench, pipeline_records</code></pre>
+      </div>
+    </div>
+    <!--/ Usage. -->
+  </div>
+</section>
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <pre><code>@article{rajabi2026veriladder,
+  title={VeriLadder: A Multi-Agent Specification Refinement System for Tool-Verified Verilog Datasets},
+  author={Rajabi, Saeid and Yang, Chengmo and Patnaik, Satwik},
+  journal={arXiv preprint arXiv:2611.28617},
+  year={2026}
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <a href="https://www.udel.edu" aria-label="University of Delaware">
+        <img class="ud-logo" src="./static/images/ud_logo.png" alt="University of Delaware">
+      </a>
+    </div>
+    <div class="content has-text-centered">
+      <a class="icon-link" href="https://huggingface.co/collections/saeidrajabi/veriladder" aria-label="VeriLadder on Hugging Face">
+        <i class="fas fa-database"></i>
+      </a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            Website template borrowed from <a href="https://nerfies.github.io">Nerfies</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.ex-tab'));
+    var panels = Array.prototype.slice.call(document.querySelectorAll('.ex-panel'));
+    var prev = document.getElementById('ex-prev'), next = document.getElementById('ex-next');
+    var cur = 0;
+    function show(i) {
+      cur = i;
+      tabs.forEach(function (t, k) { t.setAttribute('aria-selected', k === i ? 'true' : 'false'); });
+      panels.forEach(function (p, k) { p.classList.toggle('active', k === i); });
+      prev.disabled = i === 0;
+      next.disabled = i === panels.length - 1;
+    }
+    tabs.forEach(function (t, k) { t.addEventListener('click', function () { show(k); }); });
+    prev.addEventListener('click', function () { if (cur > 0) show(cur - 1); });
+    next.addEventListener('click', function () { if (cur < panels.length - 1) show(cur + 1); });
+    show(0);
+  })();
+</script>
+
+</body>
+</html>
